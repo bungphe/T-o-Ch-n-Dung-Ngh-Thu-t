@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng Dụng Tạo Ảnh Trending</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            /* A subtle, performant gradient background */
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 2rem 2rem;
+        }
+        .drop-zone {
+            transition: all 0.2s ease-in-out;
+            min-height: 12rem;
+            background-color: rgba(30, 41, 59, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .drop-zone.active {
+            border-color: #38bdf8;
+            background-color: rgba(30, 41, 59, 0.9);
+        }
+        .image-preview {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 50vh;
+            object-fit: contain;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .drop-zone-content {
+            transition: opacity 0.3s ease-in-out;
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0"
+  }
+}
+</script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl p-6 md:p-10 bg-gray-900 bg-opacity-80 rounded-2xl shadow-xl flex flex-col items-center border border-gray-700 backdrop-blur-sm">
+        <h1 class="text-4xl font-bold text-center mb-2 text-cyan-300">Tạo Ảnh Nghệ Thuật Bắt Trend</h1>
+        <p class="text-center text-gray-300 mb-8">Biến bức ảnh của bạn thành một tác phẩm độc đáo!</p>
+        
+        <!-- Image Upload Section -->
+        <div class="w-full flex flex-col items-center mb-8">
+            <label for="imageUpload" class="block text-gray-200 font-medium mb-2">Kéo & thả hoặc click để tải ảnh lên:</label>
+            <div id="dropZone" class="drop-zone w-full border-4 border-dashed border-gray-600 rounded-xl cursor-pointer p-4 text-center text-gray-400">
+                <div id="dropZoneContent" class="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.3"/><path d="M16 16l-1.5-1.5L9 22"/><path d="m22 13-3.3-3.3a1 1 0 0 0-1.4 0L9 20"/><path d="m19 16v6"/><path d="m22 19h-6"/></svg>
+                    <p>Kéo ảnh vào đây hoặc <strong>click để chọn tệp</strong></p>
+                </div>
+                <img id="imagePreview" src="" alt="Image Preview" class="image-preview hidden">
+                <input type="file" id="imageUpload" accept="image/*" class="hidden">
+            </div>
+        </div>
+
+        <!-- Style Selection Section -->
+        <div class="w-full mb-8">
+            <h2 class="text-xl font-semibold text-center mb-4 text-white">Chọn phong cách:</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <button data-style="Đá Vụn" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/Lhx736v9/unnamed.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Stone" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Đá Vụn</span>
+                </button>
+                <button data-style="Sóng Nước Kết Tinh" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/d0YpJCZB/unnamed-1.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Waves" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Sóng Nước Kết Tinh</span>
+                </button>
+                <button data-style="Chuối Vàng" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/WWJW2SVT/unnamed-4.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Banana" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Chuối Vàng</span>
+                </button>
+                <button data-style="Tượng Gỗ Bán Thân" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/HTXYzW0V/unnamed-5.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Bust" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Tượng Gỗ Bán Thân</span>
+                </button>
+                <button data-style="Cà Phê Bọt" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/WWZqqCPZ/unnamed-2.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Coffee" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Cà Phê Bọt</span>
+                </button>
+                <button data-style="Khối Treo Lập Phương" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/fdYVtv20/unnamed-3.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Cubes" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Khối Treo Lập Phương</span>
+                </button>
+                 <button data-style="Bong Bóng Chân Dung" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/Qvhx2Wc2/unnamed-6.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Sphere" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Bong Bóng Chân Dung</span>
+                </button>
+                 <button data-style="Ngồi Cùng Máy Quay" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/k6cbcXv9/unnamed-7.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Camcorder" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Ngồi Cùng Máy Quay</span>
+                </button>
+                <button data-style="Xây Tượng Cho Tôi" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/Z1d61wRH/20250904-2326-image.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Statue" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Xây Tượng Cho Tôi</span>
+                </button>
+                 <button data-style="Graffiti Trên Tường" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/DPtxSX7y/Workflow-image-11.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Graffiti" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Graffiti Trên Tường</span>
+                </button>
+                <button data-style="Tượng Gỗ Chạm Khắc" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/93pmWZr0/Workflow-image-4.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Wood Carving" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Tượng Gỗ Chạm Khắc</span>
+                </button>
+                 <button data-style="Chân Dung Bong Bóng" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/nN19K9FX/20250902-2344-image.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Bong Bóng" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Chân Dung Bong Bóng</span>
+                </button>
+                <button data-style="Mô Hình 3D Figure" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/SXWzFn2H/Gemini-Generated-Image-tkekpotkekpotkek.png&w=128&h=128&fit=cover&q=80&output=webp" alt="3D Figure" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Mô Hình 3D Figure</span>
+                </button>
+                <button data-style="Khắc Ảnh Cẩm Thạch" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/5XJxvX8F/Comfy-UI-00002-iguyk-1757028175.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Marble Carving" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Khắc Ảnh Cẩm Thạch</span>
+                </button>
+                <button data-style="Cute Doll" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/yFWtZYBJ/Workflow-image-3.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Cute Doll" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Cute Doll</span>
+                </button>
+                <button data-style="Gundam Figure" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/5gH2QTf5/Workflow-image-7.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Gundam Figure" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Gundam Figure</span>
+                </button>
+                <button data-style="LEGO Figure" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/rKPk0tjx/download-14.png&w=128&h=128&fit=cover&q=80&output=webp" alt="LEGO Figure" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">LEGO Figure</span>
+                </button>
+                <button data-style="Tự Sướng Với Anh Hùng DC" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/r2rfT0Nt/Comfy-UI-00001-mpxqs-1757078536.png&w=128&h=128&fit=cover&q=80&output=webp" alt="DC Hero Selfie" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Tự Sướng Với Anh Hùng DC</span>
+                </button>
+                <button data-style="Tủ Kính Trưng Bày Cao Cấp" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/PJ202Zk/Comfy-UI-00004-pcizg-1757078974.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Display Cabinet" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Tủ Kính Trưng Bày Cao Cấp</span>
+                </button>
+                <button data-style="FrontFrame" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/3yz7kTHj/Comfy-UI-00004-jifar-1757254465.png&w=128&h=128&fit=cover&q=80&output=webp" alt="FrontFrame" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">FrontFrame</span>
+                </button>
+                <button data-style="9 FigureQ 3D Với Người Thật" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/HpR3NyTR/Comfy-UI-00002-aczah-1757349212.png&w=128&h=128&fit=cover&q=80&output=webp" alt="9 FigureQ 3D" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">9 FigureQ 3D Với Người Thật</span>
+                </button>
+                <button data-style="Nhân Vật Năm 2025" class="style-option flex flex-col items-center justify-center p-2 rounded-xl border-2 border-gray-700 transition-all duration-200 hover:border-cyan-400 hover:bg-gray-800 hover:shadow-lg">
+                    <img src="https://images.weserv.nl/?url=i.ibb.co/pr9B5VHQ/Comfy-UI-00003-gutkv-1757349591.png&w=128&h=128&fit=cover&q=80&output=webp" alt="Character 2025" class="w-16 h-16 mb-2 rounded-lg object-cover" loading="lazy" width="64" height="64">
+                    <span class="text-sm font-medium text-gray-200 text-center">Nhân Vật Năm 2025</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Generate Button & Status -->
+        <button id="generateButton" class="relative bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:transform-none flex items-center justify-center min-w-[160px]">
+            <span id="buttonText">Tạo Hình Ảnh</span>
+            <svg id="buttonSpinner" class="animate-spin h-5 w-5 text-white absolute hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </button>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="mt-6 w-full max-w-md text-center hidden">
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="progressBar" class="bg-cyan-400 h-2.5 rounded-full" style="width: 0%; transition: width 15s cubic-bezier(0.2, 1, 0.8, 1);"></div>
+            </div>
+            <p id="loadingMessage" class="text-cyan-300 mt-3 text-sm animate-pulse">Đang chuẩn bị...</p>
+        </div>
+
+        <!-- Generated Image Display -->
+        <div id="imageContainer" class="mt-8 w-full max-w-xl hidden text-center">
+            <h2 class="text-xl font-semibold text-center mb-4 text-white">Tác Phẩm Của Bạn:</h2>
+            <img id="generatedImage" src="" alt="Hình ảnh được tạo ra" class="w-full h-auto rounded-xl shadow-lg border-4 border-gray-700 mb-4">
+            <a id="downloadButton" href="#" download="Hihihehe.png" class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                Tải Xuống
+            </a>
+        </div>
+
+        <div id="errorMessage" class="mt-4 p-4 bg-red-800/50 border border-red-700 text-red-300 rounded-lg hidden">
+            <p>Đã xảy ra lỗi khi tạo ảnh. Vui lòng thử lại.</p>
+        </div>
+    </div>
+    <script type="module" src="./index.tsx"></script>
+</body>
+</html>
